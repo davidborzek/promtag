@@ -1,0 +1,48 @@
+# Prometheus alerting rules for promtag. Load via rule_files in prometheus.yml.
+groups:
+  - name: promtag
+    rules:
+      - alert: PromtagNotReady
+        expr: promtag_ready == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "promtag's last reconcile did not succeed"
+          description: "promtag_ready has been 0 for 5m on {{ $labels.instance }} — Prometheus rules may not reflect current containers."
+
+      - alert: PromtagReconcileStale
+        expr: (time() - promtag_last_reconcile_success_timestamp_seconds > 300) and (promtag_last_reconcile_success_timestamp_seconds > 0)
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "promtag reconciliation is stale"
+          description: "No successful reconcile for >5m on {{ $labels.instance }}; the rendered rule files may be out of date."
+
+      - alert: PromtagReconcileErrors
+        expr: rate(promtag_reconciles_total{result="error"}[5m]) > 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "promtag reconciles are failing"
+          description: "promtag has failing reconciles on {{ $labels.instance }} (check the daemon logs and the rendered rule files)."
+
+      - alert: PromtagReloadErrors
+        expr: rate(promtag_reloads_total{result="error"}[5m]) > 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "promtag Prometheus reloads are failing"
+          description: "promtag cannot reload Prometheus on {{ $labels.instance }} — verify the reload URL and that --web.enable-lifecycle is set."
+
+      - alert: PromtagWatchFlapping
+        expr: rate(promtag_watch_restarts_total[5m]) > 0
+        for: 15m
+        labels:
+          severity: info
+        annotations:
+          summary: "promtag's Docker event watcher is flapping"
+          description: "The Docker event stream keeps being re-established on {{ $labels.instance }} — usually Docker API instability, not promtag."
