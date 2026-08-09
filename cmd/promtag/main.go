@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/client"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/davidborzek/promtag/internal/config"
 	"github.com/davidborzek/promtag/internal/metrics"
@@ -24,7 +24,7 @@ import (
 var version = "dev"
 
 func main() {
-	app := &cli.App{
+	cmd := &cli.Command{
 		Name:    "promtag",
 		Usage:   "render Prometheus rules from Docker container labels and reload Prometheus",
 		Version: version,
@@ -33,12 +33,12 @@ func main() {
 			"each into a Prometheus rule file, and reloads Prometheus when anything changes.",
 		Action: runApp,
 	}
-	if err := app.Run(os.Args); err != nil {
+	if err := cmd.Run(context.Background(), os.Args); err != nil {
 		os.Exit(1)
 	}
 }
 
-func runApp(_ *cli.Context) error {
+func runApp(_ context.Context, _ *cli.Command) error {
 	cfg := config.Load()
 	logger := newLogger(cfg.LogLevel)
 	if err := run(cfg, logger); err != nil {
