@@ -1,0 +1,83 @@
+name: promtag-example
+
+# A complete, self-contained setup:
+#   docker-socket-proxy  -> gives promtag least-privilege access to the Docker API
+#   promtag            -> renders container-labelled rules into the shared volume
+#   prometheus           -> loads the rules and gets reloaded by promtag
+#   node-exporter        -> example workload that ships its own alert rules as a label
+#
+# Try it:  docker compose up -d
+# Then open http://localhost:9090/rules  and watch the "node" group appear.
+
+services:
+  # Least-privilege Docker API access. promtag never touches the raw socket;
+  # it talks TCP to this hardened proxy (read-only, containers + events only).
+  docker-socket-proxy:
+    image: ghcr.io/tecnativa/docker-socket-proxy:0.3.0
+    environment:
+      CONTAINERS: 1
+      EVENTS: 1
+      PING: 1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+
+  promtag:
+    image: ghcr.io/davidborzek/promtag:0.1.0
+    environment:
+      DOCKER_HOST: tcp://docker-socket-proxy:2375
+      PROMTAG_RELOAD_URL: http://prometheus:9090/-/reload
+      PROMTAG_RULES_DIR: /rules
+    volumes:
+      - rules:/rules # read-write: promtag owns this directory
+    depends_on:
+      - docker-socket-proxy
+    restart: unless-stopped
+    labels:
+      # promtag monitoring itself — dogfooding its own metrics
+      promtag.rules.promtag: |
+        - alert: PromtagReloadFailing
+          expr: increase(promtag_reloads_total{result="error"}[15m]) > 0
+          for: 15m
+          labels: {severity: warning}
+          annotations: {summary: "promtag cannot reload Prometheus"}
+        - alert: PromtagInvalidRules
+          expr: promtag_invalid_rules > 0
+          for: 10m
+          labels: {severity: warning}
+
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.enable-lifecycle # required so promtag can POST /-/reload
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - rules:/rules:ro # read-only mirror of what promtag writes
+    restart: unless-stopped
+
+  # Example workload. Its alert + recording rules live right next to the
+  # service, as a label — that is the whole point of promtag.
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:v1.8.2
+    command: ["--path.rootfs=/host"]
+    pid: host
+    volumes:
+      - /:/host:ro,rslave
+    labels:
+      promtag.rules.node: |
+        - alert: NodeHighLoad
+          expr: node_load1 > 5
+          for: 5m
+          labels: {severity: warning}
+          annotations:
+            summary: "High 1m load on {{ $$labels.instance }}"
+            description: "node_load1 is {{ $$value }}"
+        - record: instance:node_cpu:count
+          expr: count(node_cpu_seconds_total{mode="idle"}) by (instance)
+    restart: unless-stopped
+
+volumes:
+  rules:

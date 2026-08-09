@@ -1,0 +1,7 @@
+# build output
+/promtag
+/dist/
+
+# test / coverage
+*.out
+*.tmp
