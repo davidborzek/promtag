@@ -5,3 +5,6 @@
 # test / coverage
 *.out
 *.tmp
+
+# direnv
+.direnv/

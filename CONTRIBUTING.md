@@ -15,6 +15,15 @@ go test ./...       # unit tests
 
 Formatting is enforced in CI — run `gofmt -w .` before committing.
 
+### Nix dev shell
+
+A `flake.nix` provides a dev shell mirroring the CI toolchain (Go pinned via
+`go.mod`, golangci-lint, govulncheck):
+
+```sh
+nix develop      # or, with direnv installed: direnv allow
+```
+
 ### Integration and e2e tests
 
 Two tiers exercise real infrastructure via Docker (behind build tags, skipped
