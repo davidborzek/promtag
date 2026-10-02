@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2](https://github.com/davidborzek/promtag/compare/v0.1.1...v0.1.2) (2026-10-02)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/moby/moby/api to v1.56.1 ([#16](https://github.com/davidborzek/promtag/issues/16)) ([1ed33e1](https://github.com/davidborzek/promtag/commit/1ed33e10f15878fc9452e0b903a31622fc9a0606))
+* **deps:** update module github.com/urfave/cli/v3 to v3.14.0 ([#18](https://github.com/davidborzek/promtag/issues/18)) ([bc14b52](https://github.com/davidborzek/promtag/commit/bc14b525ee017541d894eae1b57e0a0f56dd8c3e))
+
 ## [0.1.1](https://github.com/davidborzek/promtag/compare/v0.1.0...v0.1.1) (2026-09-20)
 
 
