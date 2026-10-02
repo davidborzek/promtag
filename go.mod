@@ -7,7 +7,7 @@ require (
 	github.com/moby/moby/api v1.56.1
 	github.com/prometheus/client_golang v1.24.1
 	github.com/testcontainers/testcontainers-go v0.44.0
-	github.com/urfave/cli/v3 v3.13.0
+	github.com/urfave/cli/v3 v3.14.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
